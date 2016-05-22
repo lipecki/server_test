@@ -64,12 +64,12 @@ bool do_I_start(char* hand[]){
     for(int i = 0;i < 13;i++) if (is_two_of_clubs(hand[i])) return true;
     return false;
 }
-void is_twenty_six(int hand_score[]){
-    for(int i=0;i<4;i++) if (hand_score[i]==26){
+void is_twenty_six(int hand_score[],int len){
+    for(int i=0;i<len;i++) if (hand_score[i]==26){
             hand_score[i] = 0;
-            hand_score[(i+1)%4] = 26;
-            hand_score[(i+2)%4] = 26;
-            hand_score[(i+3)%4] = 26;
+            hand_score[(i+1)%len] = 26;
+            hand_score[(i+2)%len] = 26;
+            hand_score[(i+3)%len] = 26;
             break;
         }
 }
@@ -103,7 +103,9 @@ int split(char *str,char separator,char *list[]) {
     // in-c-how-do-i-find-the-index-of-a-character-within-a-string
     int index,i=0;
     char *e, *string;
+    char sep[] = {separator,'\0'};
     string = str;
+    if (str[((int) strlen(str))-1] != separator) strcat(string,sep);
 
     while((e = strchr(string, separator)) && i < 20) {
         index = (int) (e - string);
@@ -113,6 +115,82 @@ int split(char *str,char separator,char *list[]) {
         string = &string[index + 1];
     }
     return i;
+}
+//Set 'char *list[4] values to "FF"
+void FF_trick(char *list[]){
+    for (int k = 0; k < 4; k++) {
+        list[k] = malloc(3);
+        memset(list[k], 'F', 2);
+    }
+}
+//Set 'char *hand[13] values to "FF"
+void FF_hand(char *hand[]){
+    int i =0;
+    while(i < 3) FF_trick(&hand[(i++)*4]);
+    FF_trick(&hand[9]);
+}
+void new_deck(Card deck[])
+{
+    int i=0;
+    int j=0;
+    int k=0;
+
+    for(i=0;i<4;i++)
+    {
+        for(j=0;j<13;j++)
+        {
+            deck[k].suit=i;     //0 Klöver 1 Ruter 2 Hjärter 3 Spader
+            deck[k].value=j;
+            k++;
+        }
+    }
+}
+
+void shuffle_deck(Card deck[], Card shuffled[])
+{
+    int i=0;
+    int r;
+
+    srand(time(NULL));
+
+    //Fisher-Yates shuffle
+    for(i=0;i<51;i++)   //bara 51 ggr, 52'a kortet tilldelas sist.
+    {
+        r=rand();
+        r=r%(51-i);
+
+        shuffled[i].suit=deck[r].suit;
+        shuffled[i].value=deck[r].value;
+
+        deck[r].suit=deck[51-i].suit;
+        deck[r].value=deck[51-i].value;
+    }
+    shuffled[51].suit=deck[0].suit;
+    shuffled[51].value=deck[0].value;
+    //shuffle klar
+}
+
+void print_deck(Card deck[])
+{
+    for(int i=0;i<52;i++)
+    {
+        if(deck[i].suit == 0)
+            printf("clubs %d\n",deck[i].value+2);
+        else if(deck[i].suit == 1)
+            printf("diamonds %d\n",deck[i].value+2);
+        else if(deck[i].suit == 2)
+            printf("hearts %d\n",deck[i].value+2);
+        else
+            printf("spades %d\n",deck[i].value+2);
+    }
+    printf("\n\n");
+}
+void convert_card_struct(Card shuffled_deck[],char *deck[]){
+    for(int i=0;i<52;i++){
+        deck[i] = malloc(3);
+        sprintf(deck[i],"%x%x",(shuffled_deck[i].suit),(shuffled_deck[i].value));
+        printf("%s ",deck[i]);
+    }
 }
 
 

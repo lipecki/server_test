@@ -5,5 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99")
 
 set(SOURCE_FILES main.c
         game.c
-        game.h)
+        game.h
+        players.h
+        players.c)
 add_executable(test_game_functions ${SOURCE_FILES})
