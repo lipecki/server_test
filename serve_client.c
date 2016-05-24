@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 		printf("buffer: %s \n",buf);
 		//Receive data and start game threads for each client
 		for(int j=0;j<4;j++) {
-			if ((len = recvfrom(player[j].sockfd, player[j].pos, BUFLEN, 0, &si_other[i], &slen)) == -1) diep("recvfrom()");
+			if ((len = recvfrom(player[j].sockfd, player[j].game->buffer, BUFLEN, 0, &si_other[i], &slen)) == -1) diep("recvfrom()");
 			counter[j++] = pthread_create(&players[j], NULL, &player_waits_or_plays, (void *) &player[j]);
 			printf("Received packet from %s:%d\nData: %s\nLength: %d\n",
 			       inet_ntoa(si_other[i].sin_addr), ntohs(si_other[i].sin_port), (char *) buffer,len);
