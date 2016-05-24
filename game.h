@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 
 struct card_struct{
     int suit;

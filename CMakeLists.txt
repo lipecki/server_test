@@ -3,7 +3,7 @@ project(test_game_functions)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99")
 
-set(SOURCE_FILES main.c
+set(SOURCE_FILES serve_client.c
         game.c
         game.h
         players.h

@@ -13,21 +13,30 @@ pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 void* player_waits_or_plays (void *arguments) {
     Player *me = (Player *) arguments;
     char *player_hand[13];
+    char cards_to_send[40];
     //memcpy(player_hand,me->game.hand,39);
 
-    while(1) {
+    char trick_to_send[20];
+    int i =0, slen=sizeof((me->si_other));
+    while(i < 100) {
         pthread_mutex_lock(&mutex1);
 
         printf("\nI'm pos :%d\n", me->pos);
         printf("My hand is: \n");
         for(int j=0;j<52;j+=4) printf("\t%s",me->game->deck[me->pos+j]);
+        sprintf(cards_to_send,"%s;",me->game->deck[me->pos]);
+        for(int j=4;j<52;j+=4) {
+            strcat(cards_to_send, me->game->deck[me->pos + j]);
+            strcat(cards_to_send,";");
+        }
+        if (sendto(me->sockfd, (char *) cards_to_send, BUFLEN, 0, me->si_other,  slen)==-1)
+            perror("sendto()");
         pthread_mutex_unlock(&mutex1);
         sleep(3);
     }
     pthread_exit(EXIT_SUCCESS);
 }
-/*
-int main(void) {
+int Initiate_players() {
     char *card = malloc(3);
     strcpy(card, "FF");
 
@@ -76,7 +85,7 @@ int main(void) {
     pthread_join((players[k++]),NULL);
     return 0;
 }
-*/
+
     /* The above loop runs in parallel to the threads/phils that affect the
      common resource table.
      IMPORTANT: The synchronization must not be through one mutex! We must have

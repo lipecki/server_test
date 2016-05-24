@@ -10,9 +10,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <pthread.h>
-#include <SDL_net.h>
-#include <SDL.h>
-
+#include "game.h"
+#include "players.h"
 
 #define BUFLEN 512
 #define NPACK 4
@@ -23,29 +22,27 @@ void diep(char *s) {
     exit(EXIT_FAILURE);
 }
 // from UDP made simple at https://www.abc.se/~m6695/udp.html
-int main(void) {
-	struct sockaddr_in si_me, si_other;
+int main(int argc, char *argv[]) {
+	
+
+	struct sockaddr_in si_me, si_other[4];
 	int fd, s, i, len=13, slen=sizeof(si_other);
+
 	fd = fopen("/var/tmp/serve_client","w");
 	char buf[BUFLEN]={"start"};
+	char *trick[4];
+	FF_trick(trick);
 
-	char *hand[len];
-	FF_trick();
+	//Game initiation, shuffling and dealing.
+	Card sorted_deck[52];
+	Card shuffled_deck[52];
+	char *deck[52];
+	new_deck(sorted_deck);
+	shuffle_deck(sorted_deck,shuffled_deck);
+	convert_card_struct(shuffled_deck,deck);
+	Game *game = malloc(sizeof(Game));
+	memcpy(game->deck,deck,sizeof(deck));
 
-
-	char *trick[] = {"FF","FF","FF","FF"};
-	char trick_to_send[20];
-	for(int i =0; i<NPACK;i++) {
-		if (!i) {
-			strcpy(trick_to_send, trick[i]);
-			strcat(trick_to_send, ";");
-		}
-		else {
-			strcat(trick_to_send,trick[i]);
-			strcat(trick_to_send,";");
-		}
-		fprintf(fd,"done with trick!\n");
-	}
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
 		diep("socket");
 	printf("socket open\n");
@@ -56,19 +53,53 @@ int main(void) {
 	if (bind(s, &si_me, sizeof(si_me))==-1)
 		diep("bind");
 	printf("bound\n");
+
+	//Player initiation
+	int counter[4];
+	for(int i=0;i<4;i++){
+		counter[i] = i;
+	}
+
+	pthread_t players[4];
+	for(int i=0;i<4;i++){
+		pthread_t tmp=0;
+		players[i] = tmp;
+	}
+	//Player thread arguments are initiated
+	Player player[4];
+	for(int i=0;i<4;i++){
+		memset((char *) &si_other[i], 0, sizeof(si_other));
+		Player tmp={i,s,game,&si_me,&si_other[i]};
+		memcpy(&player[i], (void *) &tmp, sizeof(tmp));
+	}
+
+
+
 	void *buffer = (void *) strdup(buf);
 	while(strcmp(buffer,"quit")){
 		printf("buffer: %s \n",buf);
-		if ((len=recvfrom(s, buffer, BUFLEN, 0, &si_other, &slen))==-1) diep("recvfrom()");
-		printf("Received packet from %s:%d\nData: %s\nLength: %d\n",
-		       inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port), buffer,len);
+		//Receive data and start game threads for each client
+		for(int j=0;j<4;j++) {
+			if ((len = recvfrom(player[j].sockfd, player[j].pos, BUFLEN, 0, &si_other[i], &slen)) == -1) diep("recvfrom()");
+			counter[j++] = pthread_create(&players[j], NULL, &player_waits_or_plays, (void *) &player[j]);
+			printf("Received packet from %s:%d\nData: %s\nLength: %d\n",
+			       inet_ntoa(si_other[i].sin_addr), ntohs(si_other[i].sin_port), (char *) buffer,len);
+		}
+
+// Jag försöker föra över detta till trådarna--------------------
+
 		for (i=3; i<NPACK; i++) {
-			printf("Sending packet %s\n", trick[i]);
+			printf("Sending packet %s\n", deck);
 			sprintf(buf, "This is packet %d\n", i);
-			if (sendto(s, (char *) trick_to_send, BUFLEN, 0, &si_other, slen)==-1)
+			if (sendto(s, (char *) deck, BUFLEN, 0, &si_other,  slen)==-1)
 				diep("sendto()");
 			}
 	}
+	int k=0;
+	pthread_join((players[k++]),NULL);
+	pthread_join((players[k++]),NULL);
+	pthread_join((players[k++]),NULL);
+	pthread_join((players[k++]),NULL);
 	printf("the end!");
     	close(s);
     	return 0;
