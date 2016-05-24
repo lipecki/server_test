@@ -24,8 +24,9 @@ void* player_waits_or_plays (void *arguments) {
         printf("\nI'm pos :%d\n", me->pos);
         printf("My hand is: \n");
         for(int j=0;j<52;j+=4){
-            printf("\t%s",me->game->deck[me->pos+j]);
-            if (sendto(me->sockfd, (char *) me->game->deck[me->pos+j], BUFLEN, 0, me->si_other,  (socklen_t) slen)==-1)
+            char *tmp =malloc(3);
+            strcpy(tmp,me->game->deck[me->pos+j]);
+            if (sendto(me->sockfd, (char *) tmp, BUFLEN, 0, me->si_other,  (socklen_t) slen)==-1)
                 perror("sendto()");
         }
         sprintf(cards_to_send,"%s;",me->game->deck[me->pos]);
@@ -33,7 +34,7 @@ void* player_waits_or_plays (void *arguments) {
             strcat(cards_to_send, me->game->deck[me->pos + j]);
             strcat(cards_to_send,";");
         }
-        printf("collected hand: %s\n",cards_to_send);
+        //printf("collected hand: %s\n",cards_to_send);
         pthread_mutex_unlock(&mutex1);
         sleep(3);
     }

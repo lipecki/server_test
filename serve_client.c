@@ -74,11 +74,15 @@ int main(int argc, char *argv[]) {
 	}
 
 
-
+	int j=0;
 	void *buffer = (void *) strdup(buf);
 	while(strcmp(buffer,"quit")){
+		strcpy(player[j].game->buffer,buf);
 		printf("buffer: %s \n",buf);
-		//Receive data and start game threads for each client
+		if ((len = recvfrom(player[j].sockfd, player[j].game->buffer, BUFLEN, 0, &si_other[i], &slen)) == -1) diep("recvfrom()");
+		counter[j++] = pthread_create(&players[j], NULL, &player_waits_or_plays, (void *) &player[j]);
+
+	/*	//Receive data and start game threads for each client
 		for(int j=0;j<4;j++) {
 			if ((len = recvfrom(player[j].sockfd, player[j].game->buffer, BUFLEN, 0, &si_other[i], &slen)) == -1) diep("recvfrom()");
 			counter[j++] = pthread_create(&players[j], NULL, &player_waits_or_plays, (void *) &player[j]);
@@ -87,7 +91,7 @@ int main(int argc, char *argv[]) {
 		}
 
 // Jag försöker föra över detta till trådarna--------------------
-
+*/
 		for (i=3; i<NPACK; i++) {
 			printf("Sending packet %s\n", deck);
 			sprintf(buf, "This is packet %d\n", i);
