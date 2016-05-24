@@ -39,9 +39,10 @@ int main(int argc, char *argv[]) {
 	char *deck[52];
 	new_deck(sorted_deck);
 	shuffle_deck(sorted_deck,shuffled_deck);
-	convert_card_struct(shuffled_deck,deck);
+	convert_card_struct(shuffled_deck,deck,buf);
 	Game *game = malloc(sizeof(Game));
 	memcpy(game->deck,deck,sizeof(deck));
+	printf("something! %s\n",buf);
 
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
 		diep("socket");
@@ -80,7 +81,8 @@ int main(int argc, char *argv[]) {
 		strcpy(player[j].game->buffer,buf);
 		printf("buffer: %s \n",buf);
 		if ((len = recvfrom(player[j].sockfd, player[j].game->buffer, BUFLEN, 0, &si_other[i], &slen)) == -1) diep("recvfrom()");
-		counter[j++] = pthread_create(&players[j], NULL, &player_waits_or_plays, (void *) &player[j]);
+		counter[j] = pthread_create(&players[j], NULL, &player_waits_or_plays, (void *) &player[j]);
+		printf(buf);
 
 	/*	//Receive data and start game threads for each client
 		for(int j=0;j<4;j++) {
@@ -91,11 +93,12 @@ int main(int argc, char *argv[]) {
 		}
 
 // Jag försöker föra över detta till trådarna--------------------
-*/
+*/		compile_card_string(shuffled_deck,buf);
+		for(int j=0;j<13;j++) printf("%s;",deck);
 		for (i=3; i<NPACK; i++) {
-			printf("Sending packet %s\n", deck);
+			printf("Sending packet %s\n", buffer);
 			sprintf(buf, "This is packet %d\n", i);
-			if (sendto(s, (char *) deck, BUFLEN, 0, &si_other,  slen)==-1)
+			if (sendto(s, buffer, BUFLEN, 0, &si_other,  slen)==-1)
 				diep("sendto()");
 			}
 	}

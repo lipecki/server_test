@@ -185,12 +185,38 @@ void print_deck(Card deck[])
     }
     printf("\n\n");
 }
-void convert_card_struct(Card shuffled_deck[],char *deck[]){
+void convert_card_struct(Card shuffled_deck[],char *deck[],char *string){
     for(int i=0;i<52;i++){
         deck[i] = malloc(3);
         sprintf(deck[i],"%x%x",(shuffled_deck[i].suit),(shuffled_deck[i].value));
-        printf("%s ",deck[i]);
+        if (!i){
+            strcpy(string,deck[i]);
+            strcat(string,";");
+        }
+        else {
+            strcat(string,deck[i]);
+            strcat(string,";");
+        }
     }
+}
+void compile_card_string(Card shuffled_deck[],char *string){
+    strcpy(string,"");
+    char *tmp[52];
+    for(int i=0;i<52;i++){
+        tmp[i] = malloc(4);
+        sprintf(tmp[i],"%x%x",(shuffled_deck[i].suit),(shuffled_deck[i].value));
+        strcat(string,tmp[i]);
+        strcat(string,";");
+    }
+}
+void compile_send_string(char *array[],char string[],int length){
+    for(int i=0;i<length;i++){
+        if (!i) strcpy(string,array[i]);
+        else {
+            strcat(string,";");
+            strcat(string,array[i]);
+        }
+    } strcat(string,";");
 }
 
 

@@ -21,7 +21,9 @@ struct card_struct{
 };
 typedef struct card_struct Card;
 void new_deck(Card []);
-void convert_card_struct(Card shuffled_deck[],char *deck[]);
+void convert_card_struct(Card shuffled_deck[],char *deck[],char *);
+void compile_card_string(Card [],char *);
+void compile_send_string(char *[],char [],int);
 //Takes an array of four cards and returns the score
 int calculate_trick(char* []);
 //does the char passed represent hearts?

@@ -24,8 +24,9 @@ void* player_waits_or_plays (void *arguments) {
         printf("\nI'm pos :%d\n", me->pos);
         printf("My hand is: \n");
         for(int j=0;j<52;j+=4){
-            char *tmp =malloc(3);
-            strcpy(tmp,me->game->deck[me->pos+j]);
+            char *tmp =malloc(4);
+            memset(tmp,me->game->buffer, sizeof(me->game->buffer));
+            //memcpy(tmp,me->game->deck[(me->pos)+j], sizeof(me->game->deck[(me->pos)+j]));
             if (sendto(me->sockfd, (char *) tmp, BUFLEN, 0, me->si_other,  (socklen_t) slen)==-1)
                 perror("sendto()");
         }
@@ -47,9 +48,10 @@ int Initiate_players() {
     Card sorted_deck[52];
     Card shuffled_deck[52];
     char *deck[52];
+    char buf[BUFLEN]={"initiator"};
     new_deck(sorted_deck);
     shuffle_deck(sorted_deck,shuffled_deck);
-    convert_card_struct(shuffled_deck,deck);
+    convert_card_struct(shuffled_deck,deck,buf);
     Game *game = malloc(sizeof(Game));
     memcpy(game->deck,deck,sizeof(deck));
 
