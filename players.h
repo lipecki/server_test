@@ -37,7 +37,7 @@ typedef struct game_struct{
 struct player_parms;
 typedef struct player_parms{
     int pos;
-    int sockfd;
+    int *sockfd;
     Game *game;
     struct sockaddr_in *si_me;
     struct sockaddr_in *si_other;

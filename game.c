@@ -218,6 +218,10 @@ void compile_send_string(char *array[],char string[],int length){
         }
     } strcat(string,";");
 }
+int find_DD(char *str[],int len){
+    for (int i = 0; i < len; i++) if(!(strcmp(str[i],"DD"))) return i;
+    return -1;
+}
 
 
 

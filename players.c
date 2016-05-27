@@ -14,30 +14,36 @@ void* player_waits_or_plays (void *arguments) {
     Player *me = (Player *) arguments;
     char *player_hand[13];
     char cards_to_send[40];
+    int len;
     //memcpy(player_hand,me->game.hand,39);
 
     char trick_to_send[20];
-    int i =0, slen=sizeof((me->si_other));
-    while(i < 100) {
+    int i =0, slen=sizeof(me->si_other);
+    while(i < 2) {
         pthread_mutex_lock(&mutex1);
-
+        char *tmp[200];
         printf("\nI'm pos :%d\n", me->pos);
-        printf("My hand is: \n");
-        for(int j=0;j<52;j+=4){
-            char *tmp =malloc(4);
-            memset(tmp,me->game->buffer, sizeof(me->game->buffer));
-            //memcpy(tmp,me->game->deck[(me->pos)+j], sizeof(me->game->deck[(me->pos)+j]));
-            if (sendto(me->sockfd, (char *) tmp, BUFLEN, 0, me->si_other,  (socklen_t) slen)==-1)
-                perror("sendto()");
-        }
+        printf("My hand is: %s\n",me->game->buffer);
+        len = (int) sizeof(me->game->buffer);
+        printf("client buffer: %s\n,len: %d\n socket: %d",me->game->buffer,len,*(me->sockfd));
+        memcpy(tmp,me->game->buffer,strlen(me->game->buffer));
+
+        if (sendto(*(me->sockfd),
+                   (char *) tmp,
+                   (len*13), 0,
+                   (const struct sockaddr *) me->si_other,
+                   (socklen_t) slen)==-1)
+            perror("sendto() FAILED");
         sprintf(cards_to_send,"%s;",me->game->deck[me->pos]);
         for(int j=4;j<52;j+=4) {
             strcat(cards_to_send, me->game->deck[me->pos + j]);
             strcat(cards_to_send,";");
         }
-        //printf("collected hand: %s\n",cards_to_send);
+        if (sendto(me->sockfd, cards_to_send, (size_t) (len * 13), 0, (const struct sockaddr *) me->si_other, (socklen_t) slen) == -1)
+        printf("collected hand: %s\n",cards_to_send);
         pthread_mutex_unlock(&mutex1);
         sleep(3);
+        i++;
     }
     pthread_exit(EXIT_SUCCESS);
 }

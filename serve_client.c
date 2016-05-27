@@ -25,8 +25,11 @@ void diep(char *s) {
 int main(int argc, char *argv[]) {
 	
 
-	struct sockaddr_in si_me, si_other[4];
-	int fd, s, i, len=13, slen=sizeof(si_other);
+	struct sockaddr_in si_me, si_oth,si_other[4];
+	int s, i;
+	socklen_t slen=sizeof(si_other);
+	ssize_t len;
+	FILE *fd;
 
 	fd = fopen("/var/tmp/serve_client","w");
 	char buf[BUFLEN]={"start"};
@@ -42,7 +45,8 @@ int main(int argc, char *argv[]) {
 	convert_card_struct(shuffled_deck,deck,buf);
 	Game *game = malloc(sizeof(Game));
 	memcpy(game->deck,deck,sizeof(deck));
-	printf("something! %s\n",buf);
+	memcpy(game->buffer,buf, sizeof(buf));
+	printf("Shuffled deck: \n%s\n\n",game->buffer);
 
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
 		diep("socket");
@@ -69,21 +73,71 @@ int main(int argc, char *argv[]) {
 	//Player thread arguments are initiated
 	Player player[4];
 	for(int i=0;i<4;i++){
-		memset((char *) &si_other[i], 0, sizeof(si_other));
-		Player tmp={i,s,game,&si_me,&si_other[i]};
+		memset((char *) &si_other[i], 0, sizeof(si_other[i]));
+		Player tmp={i,&s,game,&si_me,&si_other[i]};
 		memcpy(&player[i], (void *) &tmp, sizeof(tmp));
+	}
+	//deal cards
+	for (int k = 0; k < 4; k++) {
+		sprintf(player[k].game->buffer,"%s;",game->deck[k]);
+		for(int j=4;j<52;j+=4) {
+			strcat(player[k].game->buffer, game->deck[j+k]);
+			strcat(player[k].game->buffer,";");
+		}
+		printf("Player %d game buffer: %s\n",k,player[k].game->buffer);
 	}
 
 
-	int j=0;
+	int j=0,connected=0;
 	void *buffer = (void *) strdup(buf);
-	while(strcmp(buffer,"quit")){
-		strcpy(player[j].game->buffer,buf);
-		printf("buffer: %s \n",buf);
-		if ((len = recvfrom(player[j].sockfd, player[j].game->buffer, BUFLEN, 0, &si_other[i], &slen)) == -1) diep("recvfrom()");
-		counter[j] = pthread_create(&players[j], NULL, &player_waits_or_plays, (void *) &player[j]);
-		printf(buf);
+	bool connections[]={false,false,false,false};
+	char *this_is_my_pos[4];
 
+	do{
+		printf("inet: %s\tsocket descriptor: %d\n\n",
+		       inet_ntoa(player[j].si_other->sin_addr),
+				 player[j].sockfd);
+		if((len = recvfrom(s, buffer, BUFLEN, 0, &si_oth, &slen)) == -1) diep("recvfrom()");
+		printf("addr: %d\n",si_oth.sin_addr.s_addr);
+
+		//check given position
+		separate_strings(buffer,";",this_is_my_pos,4);
+		if((j=find_DD(this_is_my_pos,4))== -1) perror("not a new connection");
+		if(j < 4 && j >= 0 && !connections[j]){
+			connections[j]=true;
+			connected += 1;
+		} else perror("not a new connection");
+		player[j].sockfd = s;
+		player[j].si_other->sin_addr=si_oth.sin_addr;
+		player[j].si_other->sin_port=si_oth.sin_port;
+
+		printf("Received packet from IP-address: %s: Port: %d\nPosition: %d\nData: %s\nLength: %d\n",
+		       inet_ntoa(si_oth.sin_addr), ntohs(si_oth.sin_port),
+		       j,
+		       (char *) buffer,len);
+		separate_strings(buffer,";",trick,4);
+		printf("received split into: %s ",trick[0]);
+		for(int i=1;i<4;i++) printf(" %s",trick[i]);
+		printf("\nSending packet: \n%s\nto player %d\n", player[j].game->buffer,j);
+		if (sendto(s, player[j].game->buffer, 200, 0, (struct sockaddr *) &si_oth,  slen)==-1)
+			diep("sendto()");
+
+	} while (connected<4);
+
+
+
+	/*while(strcmp(buffer,"quit")){
+		printf("buffer: %s \n",player[j].game->buffer);
+		if ((len = recvfrom(s, buffer, BUFLEN, 0, &si_oth, &slen)) == -1) diep("recvfrom()");
+		printf("Received packet from %s:%d\nData: %s\nLength: %d\n",
+		       inet_ntoa(si_oth.sin_addr), ntohs(si_oth.sin_port), (char *) buffer,len);
+	*/	//counter[j] = pthread_create(&players[j], NULL, &player_waits_or_plays, (void *) &player[j]);
+		//pthread_join((players[j]),NULL);
+
+	printf("client data: %s \n",buffer);
+	separate_strings(buffer,";",trick,4);
+	printf("received split into: %s\n",trick[0]);
+	for(int i=1;i<4;i++) printf(" %s",trick[i]);
 	/*	//Receive data and start game threads for each client
 		for(int j=0;j<4;j++) {
 			if ((len = recvfrom(player[j].sockfd, player[j].game->buffer, BUFLEN, 0, &si_other[i], &slen)) == -1) diep("recvfrom()");
@@ -92,22 +146,19 @@ int main(int argc, char *argv[]) {
 			       inet_ntoa(si_other[i].sin_addr), ntohs(si_other[i].sin_port), (char *) buffer,len);
 		}
 
-// Jag försöker föra över detta till trådarna--------------------
-*/		compile_card_string(shuffled_deck,buf);
-		for(int j=0;j<13;j++) printf("%s;",deck);
-		for (i=3; i<NPACK; i++) {
-			printf("Sending packet %s\n", buffer);
-			sprintf(buf, "This is packet %d\n", i);
-			if (sendto(s, buffer, BUFLEN, 0, &si_other,  slen)==-1)
-				diep("sendto()");
-			}
-	}
+ // Jag försöker föra över detta till trådarna--------------------//
+		char cards_to_send[40];
+		i=0;
+		sprintf(cards_to_send,"%s;",player[i].game->deck[player[i].pos]);
+		for(int j=4;j<52;j+=4) {
+			strcat(cards_to_send, player[i].game->deck[player[i].pos+j]);
+			strcat(cards_to_send,";");
+		}
+		printf("Sending packet2: \n%s\n", cards_to_send);
+		if (sendto(s, cards_to_send, 40, 0, (struct sockaddr *) &si_other[i],  slen)==-1)
+			diep("sendto()");
 	int k=0;
-	pthread_join((players[k++]),NULL);
-	pthread_join((players[k++]),NULL);
-	pthread_join((players[k++]),NULL);
-	pthread_join((players[k++]),NULL);
-	printf("the end!");
+*/
     	close(s);
     	return 0;
 }

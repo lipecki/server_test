@@ -14,6 +14,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <assert.h>
 
 struct card_struct{
     int suit;
@@ -69,6 +70,7 @@ void FF_trick(char *[]);
 void FF_hand(char *[]);
 void print_deck(Card []);
 void shuffle_deck(Card [],Card []);
+int find_DD(char *[],int);
 #endif
 
 
