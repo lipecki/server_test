@@ -45,8 +45,8 @@ int main(int argc, char *argv[]) {
 	convert_card_struct(shuffled_deck,deck,buf);
 	Game *game = malloc(sizeof(Game));
 	memcpy(game->deck,deck,sizeof(deck));
-	memcpy(game->buffer,buf, sizeof(buf));
-	printf("Shuffled deck: \n%s\n\n",game->buffer);
+	for (int k = 0; k < 4; k++) memcpy(game->buffer[k],buf, sizeof(buf));
+	for (int k = 0; k < 4; k++) printf("Shuffled deck: \n%s\n\n",game->buffer[k]);
 
 	if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
 		diep("socket");
@@ -79,13 +79,14 @@ int main(int argc, char *argv[]) {
 	}
 	//deal cards
 	for (int k = 0; k < 4; k++) {
-		sprintf(player[k].game->buffer,"%s;",game->deck[k]);
+		sprintf(player[k].game->buffer[k],"%s;",game->deck[k]);
 		for(int j=4;j<52;j+=4) {
-			strcat(player[k].game->buffer, game->deck[j+k]);
-			strcat(player[k].game->buffer,";");
+			strcat(player[k].game->buffer[k], game->deck[(j+k)]);
+			strcat(player[k].game->buffer[k],";");
 		}
-		printf("Player %d game buffer: %s\n",k,player[k].game->buffer);
+		printf("Player %d game buffer: %s\n",k,player[k].game->buffer[k]);
 	}
+	for (int k = 0; k < 4; k++)printf("Player %d game buffer: %s\n",k,player[k].game->buffer[k]);
 
 
 	int j=0,connected=0;
@@ -118,8 +119,8 @@ int main(int argc, char *argv[]) {
 		separate_strings(buffer,";",trick,4);
 		printf("received split into: %s ",trick[0]);
 		for(int i=1;i<4;i++) printf(" %s",trick[i]);
-		printf("\nSending packet: \n%s\nto player %d\n", player[j].game->buffer,j);
-		if (sendto(s, player[j].game->buffer, 200, 0, (struct sockaddr *) &si_oth,  slen)==-1)
+		printf("\nSending packet: \n%s\nto player %d\n", player[j].game->buffer[j],j);
+		if (sendto(s, player[j].game->buffer[j], 200, 0, (struct sockaddr *) &si_oth,  slen)==-1)
 			diep("sendto()");
 
 	} while (connected<4);
