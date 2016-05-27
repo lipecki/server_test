@@ -11,6 +11,8 @@
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 void* player_waits_or_plays (void *arguments) {
+
+
     Player *me = (Player *) arguments;
     char *player_hand[13];
     char cards_to_send[40];

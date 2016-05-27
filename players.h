@@ -33,6 +33,7 @@ typedef struct game_struct{
     int hand_scores[4];
     int round_score[4];
 
+
 }Game;
 struct player_parms;
 typedef struct player_parms{
