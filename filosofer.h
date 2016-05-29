@@ -38,6 +38,10 @@ void* philosophize (void* parameters) {
 
                 if(!pthread_mutex_trylock(filosof->chop_stick_l)) {
                         //printf("The table: %s at pos %d\n", filosof->table,filosof->pos);
+                        //ätpinne till vänster lyfts
+                        if(filosof->pos==0)             //samma vänstra pinne visas två gånger på pos 0
+                                filosof->table[filosof->noPhils*2] = '|';
+                        filosof->table[(filosof->pos)*2] = '|';
                         if(!pthread_mutex_trylock(filosof->chop_stick_r)) {
                                 sec=(unsigned int) rand()%3+1;
                                 printf("Philosopher %d eating for %d secs\n",filosof->pos,sec);
