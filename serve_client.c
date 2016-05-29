@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 		       inet_ntoa(player[j].si_other->sin_addr),
 				 player[j].sockfd);
 		if((len = recvfrom(s, buffer, BUFLEN, 0, &si_oth, &slen)) == -1) diep("recvfrom()");
-		printf("addr: %d\n",si_oth.sin_addr.s_addr);
+		printf("from addr: %d\n",si_oth.sin_addr.s_addr);
 
 		//check given position
 		separate_strings(buffer,";",this_is_my_pos,4);
@@ -125,6 +125,17 @@ int main(int argc, char *argv[]) {
 
 	} while (connected<4);
 
+	// Här börjar spelet
+	// Jag räknar med att klienten ställer frågor om sticket
+
+
+	// Förmodligen börjar en do-while-loop här som kör så länge
+
+	if((len = recvfrom(s, buffer, BUFLEN, 0, &si_oth, &slen)) == -1) diep("recvfrom()");
+	printf("from addr: %d\n",si_oth.sin_addr.s_addr);
+
+	// Switch-sats beroende på
+
 
 
 	/*while(strcmp(buffer,"quit")){
@@ -135,10 +146,11 @@ int main(int argc, char *argv[]) {
 	*/	//counter[j] = pthread_create(&players[j], NULL, &player_waits_or_plays, (void *) &player[j]);
 		//pthread_join((players[j]),NULL);
 
-	printf("client data: %s \n",buffer);
+	printf("\nclient data: %s \n",buffer);
 	separate_strings(buffer,";",trick,4);
-	printf("received split into: %s\n",trick[0]);
+	printf("received split into: %s ",trick[0]);
 	for(int i=1;i<4;i++) printf(" %s",trick[i]);
+	printf("\n");
 	/*	//Receive data and start game threads for each client
 		for(int j=0;j<4;j++) {
 			if ((len = recvfrom(player[j].sockfd, player[j].game->buffer, BUFLEN, 0, &si_other[i], &slen)) == -1) diep("recvfrom()");
