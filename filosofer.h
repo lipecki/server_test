@@ -82,7 +82,7 @@ void* philosophize (void* parameters) {
                                 filosof->status='W';
                                 //filosofer väntar på att nästa pinne ska bli ledig
                                 filosof->table[(filosof->pos)*2+1]=filosof->status;
-                                if(filosof->deadlock) while (pthread_mutex_trylock(filosof->chop_stick_r));
+                                if(filosof->deadlock) (pthread_mutex_lock(filosof->chop_stick_r));
 
                                 else if ((filosof->pos+priority)%2 && !filosof->deadlock) {
                                         int i=2;
