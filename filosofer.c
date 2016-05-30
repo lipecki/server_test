@@ -31,16 +31,18 @@ int main(int argc,char *argv[])
 
         if(argc < 2){
                 printf("Please provide number of philosophers as argument 1!");
-                //exit(EXIT_FAILURE);
+                exit(EXIT_FAILURE);
         }
         else if(argc > 3) {
                 printf("Too many arguments!\n");
                 exit(EXIT_FAILURE);
         }
         else {
-                if (argc == 3) assert((strcmp(argv[2],"deadlock"))==0);
-                noPhils = (int) argv[1];
-                deadlock = true;
+                if (argc == 3) {
+			assert((strcmp(argv[2],"deadlock"))==0);
+			deadlock = true;
+		}
+                noPhils = atoi(argv[1]);
         }
         for (int k = 0; k < noPhils; k++) {
                 if(!k) strcpy(table,"_W");
@@ -48,7 +50,7 @@ int main(int argc,char *argv[])
                 else strcat(table,"_W");
         }
         printf("The table: %s\n",table);
-        pthread_t phils[noPhils]; /*Some sort of array of phils are needed*/
+        pthread_t phils[noPhils]; 		/*Some sort of array of phils are needed*/
         Philosopher ctrl_phil[noPhils];
         pthread_mutex_t chop_stick[noPhils];
 

@@ -1,25 +1,21 @@
-all: serve_client.o game.o players.o serve_client
+all: filosofer.o filosofer
 
 clean:
 	rm -f *.o
-	rm -f serve_client
+	rm -f filosofer
 
-CC= gcc -std=c99 -g -w
+CC= gcc -std=c99 -g
 CFLAGS=-lpthread
-DEPS = game.h players.h
+DEPS = filosofer.h
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-serve_client: serve_client.o game.o players.o
-	$(CC) -o serve_client serve_client.o game.o players.o -lpthread
+filosofer: filosofer.o 
+	$(CC) -o filosofer filosofer.o -lpthread
 
-players.o: players.c
-	$(CC) -c players.c -lpthread
+filosofer.o: filosofer.c filosofer.h
+	$(CC) -c filosofer.c -lpthread
 
-game.o: game.c
-	$(CC) -c game.c
 
-serve_client.o: serve_client.c
-	$(CC) -c serve_client.c -lpthread
 
