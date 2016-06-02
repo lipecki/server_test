@@ -25,16 +25,6 @@ struct phil_parms
 };
 typedef struct phil_parms Philosopher;
 
-// En snyggare lösning vore att ha spelbordets data i en egen struct och låta den ingå i Philosopher
-struct set_table{
-        pthread_mutex_t *chop_stick_l;
-        pthread_mutex_t *chop_stick_r;
-        int *round;
-        char *state;
-        bool deadlock;
-};
-typedef struct set_table Table;
-
 void* philosophize (void* parameters) {
 
         Philosopher *filosof = (Philosopher *) parameters;
