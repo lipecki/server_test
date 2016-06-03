@@ -16,6 +16,7 @@ int calculate_trick(char* card[]){
     return score;
 }
 int check_winner(char *trick[],int player_pos_of_starting_hand) {
+    for (int j = 0; j < 4; j++) if(!(strcmp(trick[j],""))) return -1;
     char hand_suit = trick[player_pos_of_starting_hand][0];
     char high_card[3] = {'\0'};
     char tmp_card[3] = {'\0'};

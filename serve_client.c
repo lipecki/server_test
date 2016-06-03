@@ -15,7 +15,7 @@
 
 #define BUFLEN 512
 #define NPACK 4
-#define GAMEPORT 41337
+#define GAMEPORT 41339
 
 void diep(char *s) {
     perror(s);
@@ -215,17 +215,44 @@ int main(int argc, char *argv[]) {
 	// så länge första handen spelas vill vi jämföra skickade händer med mottagna händer
 	while(strstr(buffer, "00") && strstr(buffer,"FF")){
 		if((len = recvfrom(s, new_buffer, BUFLEN, 0, (struct sockaddr *) &si_oth, &slen)) == -1) diep("recvfrom()");
-		if((strcmp((char *) buffer, (char *) new_buffer))) {
-			for (int l = 0; l < 4; l++) {
+		//Vill du ha hela din hand igen?
+		if(strstr((char*) new_buffer, "DD")){
+			for (int i = 0; i < 4; i++) {
+				if(si_oth.sin_addr.s_addr==player[i].si_other->sin_addr.s_addr){
+					if (sendto(s, game->hands[i],
+						   sizeof(game->hands[i]), 0,
+						   (struct sockaddr *) &si_other[i],
+						   slen) == -1) diep("sendto()");
+					// inga onödiga loopar!
+					break;
+				}
+			}
+			//tillbaka till att ta emot igen!
+			continue;
+		}
+		else if((strcmp((char *) buffer, (char *) new_buffer)) && !(strstr(new_buffer, "EE"))) {
+			printf("Gammalt stick: %s\nUppdaterat stick: %s",(char*) buffer, (char*) new_buffer);
+			strcpy((char*)buffer, new_buffer);
+			split((char*) buffer,';',game->trick);
+
+			//bufferten måste återställas efter split()
+			strcpy((char*)buffer, new_buffer);
+			printf("\nkontroll av pekare: : \n");
+			for (int i = 0; i < 4; i++) printf("trick %d: %s\n",i,game->trick[i]);
+
+			for (int l = 0; l < 4; l++){
 				strcpy(game->buffer[l],new_buffer);
 				if (sendto(s, game->buffer[l], sizeof(game->buffer[l]), 0,
 					   (struct sockaddr *) &si_other[l], slen) == -1)
 					diep("sendto()");
+				else printf("Precis skickat %s till spelare %d\n",game->buffer[l], player[l].pos);
 			}
 		}
 	}
-
-
+	assert(!strstr(game->buffer[0],"FF"));
+	//Ta reda på vem som vann sticket
+	int winner=-1;
+	printf("Winner: %d\n", winner=check_winner(game->trick,starter));
 	// Jag räknar med att klienten ställer frågor om sticket
 
 
