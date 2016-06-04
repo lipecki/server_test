@@ -15,7 +15,7 @@
 
 #define BUFLEN 512
 #define NPACK 4
-#define GAMEPORT 41339
+#define GAMEPORT 41337
 
 void diep(char *s) {
     perror(s);
@@ -149,17 +149,22 @@ int main(int argc, char *argv[]) {
 		for(int i=1;i<4;i++) printf(" %s",trick[i]);
 
 		//skicka första handen
-		printf("\nSending packet: \n%s\nto player %d\n", player[j].game->buffer[j],j);
-		if (sendto(s, player[j].game->buffer[j], 200, 0, (struct sockaddr *) &si_oth,  slen)==-1)
+		printf("\nSending packet: \n%s\nto player %d\n", game->buffer[j],j);
+		if (sendto(s, game->buffer[j], 200, 0, (struct sockaddr *) &si_oth,  slen)==-1)
 			diep("sendto()");
 
 	} while (connected<4);
 
 	int starter=0;
 	// Här börjar spelet, första handen har skickats till klienterna. Vem börjar?
-	starter=who_starts(player[0].game->hands);
+	starter=who_starts(game->hands);
+	int winner=-1;
+
 	printf("player %d starts\n", starter);
 	EE_trick(trick,starter);
+	printf("Winner: %d\n", winner=check_winner(trick,starter));
+	EE_trick(trick,starter);
+	EE_trick(game->trick,starter);
 
 	// Lägg nu sticket i fyra buffertar, en till varje spelare (overkill!)
 	for (int m = 0; m < 4; m++) {
@@ -211,7 +216,10 @@ int main(int argc, char *argv[]) {
 		}
 	} while (!(strstr(buffer,"00")));
 	void *new_buffer;
+	void *best_buffer;
 	new_buffer = malloc(40);
+	best_buffer = malloc(40);
+	int FFs=0, best_count=4;
 	// så länge första handen spelas vill vi jämföra skickade händer med mottagna händer
 	while(strstr(buffer, "00") && strstr(buffer,"FF")){
 		if((len = recvfrom(s, new_buffer, BUFLEN, 0, (struct sockaddr *) &si_oth, &slen)) == -1) diep("recvfrom()");
@@ -232,12 +240,17 @@ int main(int argc, char *argv[]) {
 		}
 		else if((strcmp((char *) buffer, (char *) new_buffer)) && !(strstr(new_buffer, "EE"))) {
 			printf("Gammalt stick: %s\nUppdaterat stick: %s",(char*) buffer, (char*) new_buffer);
+			char *tmp = strdup(new_buffer);
+			if((FFs= count_FF(tmp)) < best_count) best_count = FFs;
+			else continue;		// skriv inte över sticket om det inte nästa kort spelats
 			strcpy((char*)buffer, new_buffer);
 			split((char*) buffer,';',game->trick);
+
 
 			//bufferten måste återställas efter split()
 			strcpy((char*)buffer, new_buffer);
 			printf("\nkontroll av pekare: : \n");
+			for (int i = 0; i < 4; i++) printf("trick %d: %s\n",i,game->trick[i]);
 			for (int i = 0; i < 4; i++) printf("trick %d: %s\n",i,game->trick[i]);
 
 			for (int l = 0; l < 4; l++){
@@ -250,11 +263,13 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	assert(!strstr(game->buffer[0],"FF"));
+	split(game->buffer[0],';',trick);
 	//Ta reda på vem som vann sticket
-	int winner=-1;
-	printf("Winner: %d\n", winner=check_winner(game->trick,starter));
+	//int winner=-1;
+	printf("Winner: %d\n", winner=check_winner(trick,starter));
 	// Jag räknar med att klienten ställer frågor om sticket
-
+	EE_trick(trick,winner);
+	EE_trick(game->trick,winner);
 
 	// Förmodligen börjar en do-while-loop här som kör så länge
 
