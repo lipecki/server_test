@@ -19,8 +19,6 @@ int calculate_trick(char* card[]){
 int check_winner(char *trick[],int player_pos_of_starting_hand) {
     char *tmp[4];
     memcpy(tmp,trick,sizeof(*trick));
-    printf("Trick tmp: ");
-    for (int j = 0; j < 4; j++) printf("%s ",trick[j]);
     char hand_suit = trick[player_pos_of_starting_hand][0];
     char high_card[3] = {'\0'};
     char tmp_card[3] = {'\0'};
@@ -110,16 +108,13 @@ int split(char *str,char separator,char *list[]) {
     char *e, *string;
     char sep[] = {separator,'\0'};
     string = str;
-
-    //making sure the last character is a separator
     if (str[((int) strlen(str))-1] != separator) strcat(string,sep);
 
-    while((e = strchr(string, separator)) && i < 20) {
+    while((e = strchr(string, separator)) && i < 13) {
+        list[i] = malloc(4);
         index = (int) (e - string);
         string[index] = '\0';
-        list[i] = string;
-        list[i][2]='\0';
-        list[i][3]='\0';
+        strcpy(list[i],string);
         string = &string[index + 1];
         i++;
     }
@@ -145,14 +140,14 @@ void new_deck(Card deck[])
 void shuffle_deck(Card deck[], Card shuffled[])
 {
     int i=0;
-    int r;
+    long r;
 
     srand(time(NULL));
 
     //Fisher-Yates shuffle
     for(i=0;i<51;i++)   //bara 51 ggr, 52'a kortet tilldelas sist.
     {
-        r=rand();
+        r=random();
         r=r%(51-i);
 
         shuffled[i].suit=deck[r].suit;
@@ -205,7 +200,7 @@ void compile_card_string(Card shuffled_deck[],char *string){
         strcat(string,";");
     }
 }
-void compile_send_string(char *array[],char string[],int length){
+void compile_send_string(char *array[],char *string,int length){
     for(int i=0;i<length;i++){
         if (!i) strcpy(string,array[i]);
         else {
@@ -213,6 +208,16 @@ void compile_send_string(char *array[],char string[],int length){
             strcat(string,array[i]);
         }
     } strcat(string,";");
+}
+void compile_score_string(int array[],char *string,int length){
+    char *tmp = malloc(4);
+    for(int i=0;i<length;i++){
+        if (!i) sprintf(string,"%03d;",array[i]);
+        else {
+            sprintf(tmp,"%03d;",array[i]);
+            strcat(string,tmp);
+        }
+    }
 }
 int find_DD(char *str[],int len){
     for (int i = 0; i < len; i++) if(!(strcmp(str[i],"DD"))) return i;
@@ -257,6 +262,7 @@ int count_FF(char *string){
     }
     return i;
 }
+
 
 
 

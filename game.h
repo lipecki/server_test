@@ -24,7 +24,8 @@ typedef struct card_struct Card;
 void new_deck(Card []);
 void convert_card_struct(Card shuffled_deck[],char *deck[],char *);
 void compile_card_string(Card [],char *);
-void compile_send_string(char *[],char [],int);
+void compile_send_string(char *[],char *,int);
+void compile_score_string(int [],char *,int);
 //Takes an array of four cards and returns the score
 int calculate_trick(char* []);
 //does the char passed represent hearts?
@@ -72,6 +73,7 @@ void print_deck(Card []);
 void shuffle_deck(Card [],Card []);
 int find_DD(char *[],int);
 void EE_trick(char *[],int);
+//counts occurances of "FF" in string
 int count_FF(char*);
 #endif
 

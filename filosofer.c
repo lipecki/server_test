@@ -5,10 +5,39 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "filosofer.h"
+//#include "filosofer.h"
+#include <pthread.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdbool.h>
+
+struct phil_parms
+{
+    int pos;
+    int noPhils;
+    char status;
+    pthread_mutex_t *chop_stick_l;
+    pthread_mutex_t *chop_stick_r;
+    int *round;
+    char *table;
+    bool deadlock;
+};
+typedef struct phil_parms Philosopher;
+
+// En snyggare lösning vore att ha spelbordets data i en egen struct och låta den ingå i Philosopher
+struct set_table{
+    pthread_mutex_t *chop_stick_l;
+    pthread_mutex_t *chop_stick_r;
+    int *round;
+    char *state;
+    bool deadlock;
+};
+typedef struct set_table Table;
+
+void* philosophize (void*);
 
 
-char table[20] = "_W_W_W_W_W_";
+char table[20] = "_T_T_T_T_T_";
 /*Example of illustration of five philosphers with
 five chopstick. Chopsticks are lying on the table*/
 /*
@@ -30,8 +59,8 @@ int main(int argc,char *argv[])
         bool deadlock = false;
 
         if(argc < 2){
-                printf("Please provide number of philosophers as argument 1!");
-                exit(EXIT_FAILURE);
+                printf("Please provide number of philosophers as argument 1!\n");
+                //exit(EXIT_FAILURE);
         }
         else if(argc > 3) {
                 printf("Too many arguments!\n");
@@ -45,9 +74,17 @@ int main(int argc,char *argv[])
                 noPhils = atoi(argv[1]);
         }
         for (int k = 0; k < noPhils; k++) {
-                if(!k) strcpy(table,"_W");
-                else if (k==(noPhils-1)) strcat(table,"_W_");
-                else strcat(table,"_W");
+                if(!k) strcpy(table,"|W");
+                else if (k==(noPhils-1)) strcat(table,"|W|");
+                else strcat(table,"|W");
+        }
+        if (!deadlock) {
+                for (int k = 0; k < noPhils; k++) {
+                        if (!k) strcpy(table, "_T");
+                        else if (k == (noPhils - 1)) strcat(table, "_T_");
+                        else
+                                strcat(table, "_T");
+                }
         }
         printf("The table: %s\n",table);
         pthread_t phils[noPhils]; 		/*Some sort of array of phils are needed*/
@@ -110,4 +147,136 @@ int main(int argc,char *argv[])
                 pthread_join(phils[j],NULL);
         }
         return 0;
+}
+void* philosophize (void* parameters) {
+
+        Philosopher *filosof = (Philosopher *) parameters;
+        printf("I'm philosopher no %d out of %d\n",(int) filosof->pos, (int) filosof->noPhils);
+        srand((unsigned int) time(NULL));
+        unsigned int sec;
+        do{
+                //En av två filosofer måste ges prioritet när det blir konflikt!
+                //int priority = (filosof->pos+(*(filosof->round)))%2;
+                int assert;
+
+                if(!pthread_mutex_lock(filosof->chop_stick_l)) {
+                        filosof->status = 'W';
+                        //printf("The table: %s at pos %d\n", filosof->table,filosof->pos);
+                        //ätpinne till vänster lyfts
+                        if (filosof->pos == 0)             //samma vänstra pinne visas två gånger på pos 0
+                                filosof->table[filosof->noPhils * 2] = '|';
+                        filosof->table[(filosof->pos) * 2] = '|';
+
+                        //filosofer väntar på att nästa pinne ska bli ledig
+                        filosof->table[(filosof->pos) * 2 + 1] = filosof->status;
+                        if (!(filosof->deadlock)) {
+                                if (!pthread_mutex_trylock(filosof->chop_stick_r)) {
+                                        filosof->status = 'E';
+
+                                        //ätpinne till vänster lyfts
+                                        if (filosof->pos ==
+                                            0)             //samma vänstra pinne visas två gånger på pos 0
+                                                filosof->table[filosof->noPhils * 2] = '|';
+                                        filosof->table[(filosof->pos) * 2] = '|';
+                                        //filosofer äter mellan pinnarna
+                                        filosof->table[(filosof->pos) * 2 + 1] = filosof->status;
+                                        //ätpinne till höger lyfts
+                                        if (filosof->pos ==
+                                            (filosof->noPhils - 1)) //samma högra pinne visas två gånger på högsta pos
+                                                filosof->table[0] = '|';
+                                        filosof->table[(filosof->pos) * 2 + 2] = '|';
+                                        sec = (unsigned int) rand() % 3 + 1;
+                                        printf("Philosopher %d eating for %d secs\n", filosof->pos, sec);
+
+                                        sleep(sec);
+
+                                        filosof->status = 'T';
+
+                                        //ätpinne till vänster läggs ned
+                                        if (filosof->pos ==
+                                            0)             //samma vänstra pinne visas två gånger på pos 0
+                                                filosof->table[filosof->noPhils * 2] = '_';
+                                        filosof->table[(filosof->pos) * 2] = '_';
+                                        //filosofer äter mellan pinnarna
+                                        filosof->table[(filosof->pos) * 2 + 1] = filosof->status;
+                                        if (filosof->pos ==
+                                            (filosof->noPhils - 1)) //samma högra pinne visas två gånger på högsta pos
+                                                filosof->table[0] = '_';
+                                        filosof->table[(filosof->pos) * 2 + 2] = '_';
+                                        pthread_mutex_unlock(filosof->chop_stick_l);
+                                        pthread_mutex_unlock(filosof->chop_stick_r);
+
+                                        sec = (unsigned int) rand() % 5 + 2;
+                                        sleep(sec);
+                                }
+                                else {
+
+                                        /*printf("Player %d: \"OK, I'll sit here and ponder world peace"
+                                                " for %d seconds!\"\n",filosof->pos, sec=(unsigned int) rand()%5+2); */
+                                        filosof->status = 'T';
+                                        if (filosof->pos == 0)             //samma vänstra pinne visas två gånger på pos 0
+                                                filosof->table[filosof->noPhils * 2] = '_';
+                                        filosof->table[(filosof->pos) * 2] = '_';
+                                        filosof->table[(filosof->pos) * 2 + 1] = filosof->status;
+                                        pthread_mutex_unlock(filosof->chop_stick_l);
+                                        //sec = (unsigned int) rand() % 5 + 2;
+                                        sleep(sec);
+                                }
+                        }
+                        else if (filosof->deadlock){                    // för tydlighetens skull
+                                //printf("DL %d!\t",filosof->pos);
+                                filosof->status = 'W';
+
+                                //ätpinne till vänster lyfts
+                                if (filosof->pos == 0)             //samma vänstra pinne visas två gånger på pos 0
+                                        filosof->table[filosof->noPhils * 2] = '|';
+                                filosof->table[(filosof->pos) * 2] = '|';
+                                //filosofer väntar på att nästa pinne ska bli ledig
+                                filosof->table[(filosof->pos) * 2 + 1] = filosof->status;
+
+                                // Det är här det händer, när ingen återtagning av resurser är möjlig
+                                if(pthread_mutex_lock(filosof->chop_stick_r)){              //Evig väntan!
+
+                                        printf("Philosopher %d eating!\n", filosof->pos);
+                                        filosof->status = 'E';
+
+                                        //ätpinne till vänster lyfts
+                                        if (filosof->pos == 0)             //samma vänstra pinne visas två gånger på pos 0
+                                                filosof->table[filosof->noPhils * 2] = '|';
+                                        filosof->table[(filosof->pos) * 2] = '|';
+                                        //filosofer äter mellan pinnarna
+                                        filosof->table[(filosof->pos) * 2 + 1] = filosof->status;
+                                        //ätpinne till höger lyfts
+                                        if (filosof->pos ==
+                                            (filosof->noPhils - 1)) //samma högra pinne visas två gånger på högsta pos
+                                                filosof->table[0] = '|';
+                                        filosof->table[(filosof->pos) * 2 + 2] = '|';
+
+                                        sec = (unsigned int) rand() % 3 + 1;
+                                        sleep(sec);
+
+                                        filosof->status = 't';
+                                        //ätpinne till vänster läggs ned
+                                        if (filosof->pos == 0)             //samma vänstra pinne visas två gånger på pos 0
+                                                filosof->table[filosof->noPhils * 2] = '_';
+                                        filosof->table[(filosof->pos) * 2] = '_';
+                                        //filosofer äter mellan pinnarna
+                                        filosof->table[(filosof->pos) * 2 + 1] = filosof->status;
+                                        if (filosof->pos ==
+                                            (filosof->noPhils - 1)) //samma högra pinne visas två gånger på högsta pos
+                                                filosof->table[0] = '_';
+                                        filosof->table[(filosof->pos) * 2 + 2] = '_';
+                                        pthread_mutex_unlock(filosof->chop_stick_l);
+                                        pthread_mutex_unlock(filosof->chop_stick_r);
+
+                                        sec = (unsigned int) rand() % 5 + 2;
+                                        sleep(sec);
+                                }
+                        }
+
+                }
+                //printf("Player %d in round %d\n", filosof->pos,*(filosof->round));
+        }while((*(filosof->round))<48);
+        printf("Player %d in round %d\n", filosof->pos,*(filosof->round));
+        return NULL;
 }
